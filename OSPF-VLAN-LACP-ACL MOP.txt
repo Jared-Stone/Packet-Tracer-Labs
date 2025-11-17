@@ -1,0 +1,515 @@
+Week 10 Capstone Network MOP
+
+Device List
+
+Routers
+R1 (Router 1)
+R2 (Router 2)
+
+Multi-Layer Switches
+MLS1 (Multi-Layer Switch 1)
+MLS2 (Multi-Layer Switch 2)
+
+Layer 2 Switches
+SW1 (Switch 1)
+SW2 (Switch 2)
+SW3 (Switch 3)
+SW4 (Switch 4)
+
+VLANs
+VLAN 100 - 192.168.10.0/24 - ENGINEERING
+VLAN 200 - 192.168.20.0/24 - MANAGEMENT
+VLAN 300 - 192.168.30.0/24 - SALES
+VLAN 400 - 192.168.40.0/24 - GUEST
+VLAN 500 - 192.168.0.0/24 - DHCP Server
+
+End Host Devices
+Managment Devices
+ManPC1
+ManPC2
+ManPC3
+
+Engineering Devices
+EngPC1
+EngPC2
+DHCPSvr
+
+Sales Devices
+SalesPC1
+SalesPC2
+SalesPC3
+
+Guest Devices
+GuestLT1
+GuestLT2
+
+Access Lists
+Access list GUEST_NET will be configurd on the vlan 400 interface on multi-layer switch 2
+Purpose: To deny traffic from VLAN 400 to all other VLANs on the network, except for the VLAN 500 (DHCP),
+and to still allow traffic to the internet
+
+Configuration 
+
+ ##R1 Commands:
+enable
+configure Terminal
+hostname R1
+
+ 
+interface g0/0/0
+ip address 10.0.1.1 255.255.255.252
+no shutdown
+exit
+
+router ospf 1
+router-id 1.1.1.1
+network 10.0.0.0 0.0.255.255 area 0
+network 192.168.0.0 0.0.255.255 area 0
+exit
+
+lldp run
+interface range g0/0/0
+lldp transmit
+lldp receive
+end
+write
+
+
+ ##R2 COMMANDS:
+enable
+configure Terminal
+hostname R2
+
+ 
+interface g0/0/0
+ip address 10.0.2.1 255.255.255.252
+no shutdown
+exit
+
+router ospf 1
+router-id 2.2.2.2
+network 10.0.0.0 0.0.255.255 area 0
+network 192.168.0.0 0.0.255.255 area 0
+exit
+
+lldp run
+interface range g0/0/0
+lldp transmit
+lldp receive
+end
+write
+
+ ##MULTI-LAYER SWITCH 1 COMMANDS:
+enable
+configure Terminal
+hostname MLS1
+ip routing
+
+interface g0/1
+no switchport
+ip address 10.0.1.2 255.255.255.252
+exit
+
+router ospf 1
+router-id 3.3.3.3
+network 10.0.0.0 0.0.255.255 area 0
+network 192.168.0.0 0.0.255.255 area 0
+exit
+
+vlan 100
+name ENGINEERING
+exit
+
+vlan 200
+name MANAGEMENT
+exit
+
+vlan 500
+NAME DHCPSVR
+exit
+
+interface port-channel 1
+description LACP_MLS1-MLS2
+no switchport
+ip address 10.0.3.1 255.255.255.252
+no shutdown
+exit
+
+interface range f0/1-4
+description LACP_MLS1-MLS2
+no switchport
+channel-group 1 mode active
+exit
+
+interface port-channel 2
+description LACP_MLS1-SW1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 100,200,500
+switchport trunk native vlan 2319
+no shutdown
+exit
+
+interface range f0/5-6
+description LACP_MLS1-SW1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 100,200,500
+switchport trunk native vlan 2319
+channel-group 2 mode active
+exit
+
+interface port-channel 3
+description LACP_MLS1-SW2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 200
+switchport trunk native vlan 2319
+no shutdown
+exit
+
+interface range f0/7-8
+description LACP_MLS1-SW2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 200
+switchport trunk native vlan 2319
+channel-group 3 mode active
+exit
+
+interface vlan 100
+ip address 192.168.10.1 255.255.255.0
+ip helper 192.168.0.2
+
+interface vlan 200
+ip address 192.168.20.1 255.255.255.0
+ip helper 192.168.0.2
+
+interface vlan 500
+ip address 192.168.0.1 255.255.255.0
+
+lldp run
+interface range f0/1-24
+lldp transmit
+lldp receive
+interface range g0/1-2
+lldp transmit
+lldp receive
+end
+write
+
+
+ ##MULTI-LAYER SWITCH 2 COMMANDS:
+enable
+configure Terminal
+hostname MLS2
+ip routing
+
+interface g0/1
+no switchport
+ip address 10.0.2.2 255.255.255.252
+exit
+
+router ospf 1
+router-id 4.4.4.4
+network 10.0.0.0 0.0.255.255 area 0
+network 192.168.0.0 0.0.255.255 area 0
+exit
+
+vlan 300
+name SALES
+exit
+vlan 400
+name GUEST
+
+interface port-channel 1
+description LACP_MLS2-MLS1
+no switchport
+ip address 10.0.3.2 255.255.255.252
+no shutdown
+exit
+
+interface range f0/1-4
+description LACP_MLS2-MLS1
+no switchport
+channel-group 1 mode active
+exit
+
+interface port-channel 2
+description LACP_MLS2-SW3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 300
+switchport trunk native vlan 2319
+no shutdown
+exit
+
+interface range f0/5-6
+description LACP_MLS2-SW3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 300
+switchport trunk native vlan 2319
+channel-group 2 mode active
+exit
+
+interface port-channel 3
+description LACP_MLS2-SW4
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 400
+switchport trunk native vlan 2319
+no shutdown
+exit
+
+interface range f0/7-8
+description LACP_MLS2-SW4
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 400
+switchport trunk native vlan 2319
+channel-group 3 mode active
+exit
+
+ip access-list extended GUEST_NET
+deny ip 192.168.40.0 0.0.0.255 192.168.10.0 0.0.0.255
+deny ip 192.168.40.0 0.0.0.255 192.168.20.0 0.0.0.255
+deny ip 192.168.40.0 0.0.0.255 192.168.30.0 0.0.0.255
+permit ip any any
+exit
+
+interface vlan 300
+ip address 192.168.30.1 255.255.255.0
+ip helper 192.168.0.2
+
+interface vlan 400
+ip address 192.168.40.1 255.255.255.0
+ip helper 192.168.0.2
+ip access-group GUEST_NET in
+exit
+
+lldp run
+interface range f0/1-24
+lldp transmit
+lldp receive
+interface range g0/1-2
+lldp transmit
+lldp receive
+end
+write
+
+ ##SWITCH 1 COMMANDS
+enable
+configure Terminal
+hostname SW1
+
+vlan 100
+name E
+exit
+vlan 200
+name MANAGEMENT
+exit
+vlan 500
+name DHCPSVR
+
+interface port-channel 2
+description LACP_MLS1-SW1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 100,200,500
+switchport trunk native vlan 2319
+no shutdown
+exit
+
+interface range f0/1-2
+description LACP_MLS1-SW1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 100,200,500
+switchport trunk native vlan 2319
+channel-group 2 mode active
+exit
+
+interface f0/3
+switchport mode access
+switchport access vlan 500
+interface range f0/4-5
+switchport mode access 
+switchport access vlan 100
+interface f0/6
+switchport mode access 
+switchport access vlan 200
+
+lldp run
+interface range f0/1-24
+lldp transmit
+lldp receive
+exit
+interface range g0/1-2
+lldp transmit
+lldp receive
+end
+write
+
+ ##SWITCH 2 COMMANDS
+enable
+configure Terminal
+hostname SW2
+
+vlan 200
+name MANAGEMENT
+exit
+
+interface port-channel 3
+description LACP_MLS1-SW2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 200
+switchport trunk native vlan 2319
+no shutdown
+exit
+
+interface range f0/1-2
+description LACP_MLS1-SW2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 200
+switchport trunk native vlan 2319
+channel-group 3 mode active
+exit
+
+interface range f0/3-4
+switchport mode access
+switchport access vlan 200
+
+lldp run
+interface range f0/1-24
+lldp transmit
+lldp receive
+exit
+interface range g0/1-2
+lldp transmit
+lldp receive
+end
+write
+
+ ##SWITCH 3 COMMANDS
+enable
+configure Terminal
+hostname SW2
+
+vlan 300
+name SALES
+exit
+
+interface port-channel 2
+description LACP_MLS2-SW3
+switchport mode trunk
+switchport trunk allowed vlan 300
+switchport trunk native vlan 2319
+no shutdown
+exit
+
+interface range f0/1-2
+description LACP_MLS2-SW3
+switchport mode trunk
+switchport trunk allowed vlan 300
+switchport trunk native vlan 2319
+channel-group 2 mode active
+exit
+
+interface range f0/3-5
+switchport mode access
+switchport access vlan 300
+
+lldp run
+interface range f0/1-24
+lldp transmit
+lldp receive
+exit
+interface range g0/1-2
+lldp transmit
+lldp receive
+end
+write
+
+##SWITCH 4 COMMANDS
+enable
+configure Terminal
+hostname SW4
+
+vlan 400
+name GUEST
+exit
+
+interface port-channel 3
+description LACP_MLS2-SW4
+switchport mode trunk
+switchport trunk allowed vlan 400
+switchport trunk native vlan 2319
+no shutdown
+exit
+
+interface range f0/1-2
+description LACP_MLS2-SW4
+switchport mode trunk
+switchport trunk allowed vlan 400
+switchport trunk native vlan 2319
+channel-group 3 mode active
+exit
+
+interface range f0/3-4
+switchport mode access
+switchport access vlan 400
+
+lldp run
+interface range f0/1-24
+lldp transmit
+lldp receive
+exit
+interface range g0/1-2
+lldp transmit
+lldp receive
+end
+write
+
+ ##DHCP SERVER 
+ ##Server Config
+Default Gateway - 192.168.10.1
+Static IP Address - 192.168.10.2 
+Subnetmask 255.255.255.0
+
+ ##IP Pool For VLAN 100
+Name: POOL_VLAN100
+Default Gateway: 192.168.10.1
+DNS: 8.8.8.8
+Starting IP Address: 192.168.10.11
+Subnet Mask: 255.255.255.0
+
+ ##IP Pool For VLAN 200
+Name: POOL_VLAN200
+Default Gateway: 192.168.20.1
+DNS: 8.8.8.8
+Starting IP Address: 192.168.20.11
+Subnet Mask: 255.255.255.0
+
+ ##IP Pool For VLAN 300
+Name: POOL_VLAN300
+Default Gateway: 192.168.30.1
+DNS: 8.8.8.8
+Starting IP Address: 192.168.30.11
+Subnet Mask: 255.255.255.0
+
+ ##IP Pool For VLAN 400
+Name: POOL_VLAN400
+Default Gateway: 192.168.40.1
+DNS: 8.8.8.8
+Starting IP Address: 192.168.40.11
+Subnet Mask: 255.255.255.0
+
+
+ ##END HOSTS
+All end hosts devices should be configured via DHCP
+
+
+
