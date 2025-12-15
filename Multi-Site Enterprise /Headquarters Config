@@ -1,4 +1,4 @@
- ##HEADQUARTERS - AS65001
+HEADQUARTERS - AS65001
 Devices: x1 Router(R1), x2 Multi-Layer Switches(LSW1, LSW2), x2 Access-Layer Swtiches(LSW1, LSW2),
 x2 Servers (Server1, Server2), x2 Wireless Access Points (WAP1, WAP2), x5 PCs (PC1-PC5), x1 Laptop (LTP1)
 
